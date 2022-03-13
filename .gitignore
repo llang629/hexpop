@@ -1,0 +1,12 @@
+__pycache__
+*.gstmp
+
+*.csv
+*.geojson
+*.gpkg
+*.zip
+
+*.log
+nohup.out
+
+google-service-account.json

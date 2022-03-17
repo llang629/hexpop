@@ -80,5 +80,5 @@ case "$1" in
     publish
     ;;
   *)
-    echo "Usage: $0 {public|geopop|coverage|summarize|publish}"
+    echo "Usage: $0 {public|geopop|coverage|regions|summarize|publish}"
 esac

@@ -35,12 +35,18 @@ geopop() {
 
 coverage() {
   echo GCP instance type e2-medium recommended for frugal io-bound processes
-  python3 coverage.py -x 7 # fetch coverage status for each hex by region
+  expire=$1
+  expire="${expire:=7}" # default expiration seven days
+  python3 coverage.py -x $expire # fetch coverage status for each hex by region
+}
+
+views() {
+  python3 views.py  # create dynamic views of population coverage by region
 }
 
 regions() {
   # BigQuery view rolling up statistics for each region
-  bq query --nouse_legacy_sql "SELECT * FROM llang-helium.coverage.region_stats"
+  bq query --nouse_legacy_sql "SELECT * FROM llang-helium.views.region_stats"
 }
 
 summarize() {
@@ -68,17 +74,20 @@ case "$1" in
     geopop
     ;;
   coverage)
-    coverage
+    coverage $2
+    ;;
+  views)
+    views
     ;;
   regions)
     regions
     ;;
   summarize)
-    summarize
+    echo $1 deprecated
     ;;
   publish)
-    publish
+    echo $1 deprecated
     ;;
   *)
-    echo "Usage: $0 {public|geopop|coverage|regions|summarize|publish}"
+    echo "Usage: $0 {public|geopop|coverage|views|regions}"
 esac

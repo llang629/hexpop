@@ -38,11 +38,13 @@ def parse_ini(region=None):
         params.sem_code = ini.get(region, 'sem_code')
         params.sem_name = ini.get(region, 'sem_name')
         params.sem_geom = ini.get(region, 'sem_geom')
+        params.sem_geom_include = ini.getboolean(region, 'sem_geom_include')
         params.sem_source = ini.get(region, 'sem_source')
         params.bis_admin = ini.get(region, 'bis_admin')
         params.bis_code = ini.get(region, 'bis_code')
         params.bis_name = ini.get(region, 'bis_name')
         params.bis_geom = ini.get(region, 'bis_geom')
+        params.bis_geom_include = ini.getboolean(region, 'bis_geom_include')
         params.bis_source = ini.get(region, 'bis_source')
     except (configparser.NoSectionError, configparser.NoOptionError):
         logger.critical("no valid sem/bis for region %s", region)

@@ -34,29 +34,6 @@ ON
   AND updates.region=most_recent.region
   AND updates.update_time=most_recent.update_time
 """
-REGION_STATS = """
-SELECT
-  IF(ARRAY_LENGTH(region) = 1, region[OFFSET(0)],'total') AS region,
-  * EXCEPT (region),
-  ROUND(100*IFNULL(pop_cover, 0)/pop_total, 1) AS percent
-FROM (
-  SELECT
-    ARRAY_AGG(DISTINCT region) AS region,
-    COUNT(cover.h3_index) AS h3_indices,
-    MIN(update_time) AS earliest_update_time,
-    MAX(update_time) AS latest_update_time,
-    SUM(pop.population) AS pop_total,
-    SUM(CASE WHEN explorer_coverage OR mappers_coverage
-      THEN pop.population ELSE 0 END) AS pop_cover
-  FROM (
-    SELECT * FROM `{project}.{dataset}.most_recent`) AS cover
-    LEFT JOIN `{project}.public.kontur_population_20211109` AS pop
-    ON cover.h3_index = pop.h3_index
-  GROUP BY
-    ROLLUP (cover.region) )
-ORDER BY
-  pop_total
-"""
 ADDITIONS = """
 SELECT h3_index
 FROM `{project}.{regional_dataset}.{region}`
@@ -174,10 +151,6 @@ if __name__ == '__main__':
         coverage_dataset, 'most_recent',
         MOST_RECENT.format(project=coverage_dataset.project,
                            dataset=coverage_dataset.dataset_id))
-    region_stats = hexpop.bq_create_view(
-        coverage_dataset, 'region_stats',
-        REGION_STATS.format(project=coverage_dataset.project,
-                            dataset=coverage_dataset.dataset_id))
 
     for region in hexpop.clean_regions(regions):
         if region == 'gadm':

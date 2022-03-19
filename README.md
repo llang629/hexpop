@@ -55,7 +55,8 @@ Modules listed below in expected order of use.
 |`geopop.py`|Assemble list of hexes with population for each region.
 |`geopop.ini`|Configuration for each region. Also accessed by `summarize.py`.|
 |`coverage.py`|Survey Explorer and Mappers APIs to determine whether a hex has coverage (see definition above). Multithreading to parallelize API requests, but regions with many hexes still require hours or days to completely update.|
-|`summarize.py`|Join coverage and population data to create summaries suitable for [Data Studio geospatial visualization](https://support.google.com/datastudio/answer/7065037).|
+|`views.py`|Join coverage and population data to create dynamic views suitable for [Data Studio geospatial visualization](https://support.google.com/datastudio/answer/7065037).|
+|`summarize.py`|deprecated|
 |`google-service-account.json`|Account-specific credentials to [authorize BigQuery access](https://cloud.google.com/bigquery/docs/authentication/service-account-file#python). Not recorded in Git repository.|
 |`herun.sh`|Shell script for frequently run commands.|
 |`hevm.sh`|Shell script for managing Google Compute Engine VM instances.

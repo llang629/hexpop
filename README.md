@@ -53,7 +53,7 @@ Modules listed below in expected order of use.
 |`public.ini`|Configuration for each public data source.
 |`statoids.py`|Scrape [Statoids website](http://www.statoids.com/yus.html) for data about U.S. counties.|
 |`geopop.py`|Assemble list of hexes with population for each region.
-|`geopop.ini`|Configuration for each region. Also accessed by `summarize.py`.|
+|`geopop.ini`|Configuration for each region. Also accessed by `views.py`.|
 |`coverage.py`|Survey Explorer and Mappers APIs to determine whether a hex has coverage (see definition above). Multithreading to parallelize API requests, but regions with many hexes still require hours or days to completely update.|
 |`views.py`|Join coverage and population data to create dynamic views suitable for [Data Studio geospatial visualization](https://support.google.com/datastudio/answer/7065037).|
 |`summarize.py`|deprecated|

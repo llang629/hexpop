@@ -33,7 +33,7 @@ def initialize_logging(logger, verbose=False):
         _ch.setLevel(logging.INFO)
     _ch.setFormatter(formatter)
     logger.addHandler(_ch)
-    _fh = logging.handlers.RotatingFileHandler(pathlib.Path(
+    _fh = logging.handlers.RotatingFileHandler(pathlib.Path(__file__).parent / pathlib.Path(
         sys.modules['__main__'].__file__).with_suffix('.log'),
                                                maxBytes=10**6,
                                                backupCount=5)
@@ -76,8 +76,7 @@ def clean_regions(regions):
 # https://cloud.google.com/bigquery/docs/quickstarts/quickstart-client-libraries
 def bq_client():
     """Set up client for Google BigQuery API requests."""
-    credentials = service_account.Credentials.from_service_account_file(
-        'google-service-account.json')
+    credentials = service_account.Credentials.from_service_account_file(pathlib.Path(__file__).parent /'google-service-account.json')
     return bigquery.Client(credentials=credentials)
 
 

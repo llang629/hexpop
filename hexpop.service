@@ -1,0 +1,12 @@
+# install or link from /etc/systemd/system
+[Unit]
+Description=hexpop coverage service
+
+[Service]
+Type=idle
+# create symbolic link to actual location
+ExecStart=/usr/bin/python3 /usr/local/bin/coverage.py -x 7
+#Restart=on-success
+
+[Install]
+WantedBy=multi-user.target

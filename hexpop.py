@@ -11,6 +11,7 @@ from google.api_core.exceptions import Conflict, NotFound
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
+
 def initialize_logging(logger, verbose=False):
     """Initialize logger with console, file, and syslog handlers."""
     if 'linux' in platform.platform().lower():
@@ -32,10 +33,11 @@ def initialize_logging(logger, verbose=False):
         _ch.setLevel(logging.INFO)
     _ch.setFormatter(formatter)
     logger.addHandler(_ch)
-    _fh = logging.handlers.RotatingFileHandler(pathlib.Path('/var/log') / pathlib.Path(
-        sys.modules['__main__'].__file__).with_suffix('.log').name,
-                                               maxBytes=10**6,
-                                               backupCount=5)
+    _fh = logging.handlers.RotatingFileHandler(
+        pathlib.Path('/var/log') / pathlib.Path(
+            sys.modules['__main__'].__file__).with_suffix('.log').name,
+        maxBytes=10**6,
+        backupCount=5)
     _fh.setLevel(logging.INFO)
     _fh.setFormatter(formatter)
     logger.addHandler(_fh)
@@ -75,7 +77,8 @@ def clean_regions(regions):
 # https://cloud.google.com/bigquery/docs/quickstarts/quickstart-client-libraries
 def bq_client():
     """Set up client for Google BigQuery API requests."""
-    credentials = service_account.Credentials.from_service_account_file(pathlib.Path(__file__).parent /'google-service-account.json')
+    credentials = service_account.Credentials.from_service_account_file(
+        pathlib.Path(__file__).parent / 'google-service-account.json')
     return bigquery.Client(credentials=credentials)
 
 

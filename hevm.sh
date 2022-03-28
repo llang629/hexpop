@@ -24,6 +24,7 @@ case $1 in
       HELIUM_IP=`gcloud compute addresses describe $HELIUM_VM-ip --region=$HELIUM_REGION | grep 'address:' | cut  -d ' ' -f 2`
       gcloud compute instances add-access-config $HELIUM_VM --zone=$HELIUM_ZONE --access-config-name="External NAT" --address=$HELIUM_IP
       sudo sed -i '' -e "s/.*$HELIUM_VM/$HELIUM_IP	$HELIUM_VM/g" /etc/hosts
+      echo "Hostname $HELIUM_IP" >$HOME/.ssh/config.$HELIUM_VM
       echo "New external IP address: $HELIUM_IP"
       ;;
     *)

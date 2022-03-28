@@ -17,8 +17,10 @@ import tenacity
 import hexpop
 
 EXPLORER_ENABLED = True
+EXPLORER_BASE = "https://api.helium.io/v1/hotspots/hex/"
+# private "https://helium-api.stakejoy.com/v1/hotspots/hex/"
+
 MAPPERS_ENABLED = True
-EXPLORER_BASE = "https://helium-api.stakejoy.com/v1/hotspots/hex/"
 MAPPER_BASE = "https://mappers.helium.com/api/v1/uplinks/hex/"
 # avoid "https://mappers.helium.com/api/v1/coverage/geo/"
 

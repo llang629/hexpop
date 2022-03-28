@@ -87,7 +87,7 @@ logger_tenacity = logging.getLogger('tenacity')
 hexpop.initialize_logging(logger_tenacity)
 
 
-@tenacity.retry(wait=tenacity.wait_exponential(multiplier=1, min=1, max=60),
+@tenacity.retry(wait=tenacity.wait_exponential(multiplier=1, min=1, max=300),
                 before_sleep=tenacity.before_sleep_log(logger_tenacity,
                                                        logging.WARNING))
 async def fetch_coverage(h3_index, session):

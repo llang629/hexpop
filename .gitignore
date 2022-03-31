@@ -4,9 +4,10 @@ __pycache__
 *.csv
 *.geojson
 *.gpkg
-*.zip
-
+*.json
 *.log
+*.txt
+*.zip
 nohup.out
 
 google-service-account.json

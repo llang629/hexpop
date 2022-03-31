@@ -2,6 +2,7 @@
 import argparse
 import logging
 import logging.handlers
+import os
 import pathlib
 import platform
 import sys
@@ -10,6 +11,9 @@ import time
 from google.api_core.exceptions import Conflict, NotFound
 from google.cloud import bigquery
 from google.oauth2 import service_account
+
+LOG_DIR = '/var/log/hexpop'
+CACHE_DIR = '/var/cache/hexpop'
 
 
 def initialize_logging(logger, verbose=False):
@@ -33,8 +37,9 @@ def initialize_logging(logger, verbose=False):
         _ch.setLevel(logging.INFO)
     _ch.setFormatter(formatter)
     logger.addHandler(_ch)
+    os.makedirs(LOG_DIR, exist_ok=True)
     _fh = logging.handlers.RotatingFileHandler(
-        pathlib.Path('/var/log') / pathlib.Path(
+        pathlib.Path(LOG_DIR) / pathlib.Path(
             sys.modules['__main__'].__file__).with_suffix('.log').name,
         maxBytes=10**6,
         backupCount=5)

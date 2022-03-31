@@ -147,7 +147,6 @@ if __name__ == '__main__':
     hexpop.initialize_logging(logger)
     (regions, analyze, batch_size, skip_mappers, test, verbose,
      expire) = parse_args()
-    test = '_test'  # TODO: remove when safe
     EXPLORER_CACHE = blockhex.load_hex_cache(expire * 24 * 60 * 60)
     EXPLORER_CACHE.datetime = datetime.datetime.utcfromtimestamp(
         EXPLORER_CACHE.timestamp)
@@ -219,6 +218,7 @@ if __name__ == '__main__':
                                              'h3_index', 'explorer_coverage',
                                              'mappers_coverage', 'update_time'
                                          ])
+
             df_output.insert(1, 'region', region)
             hexpop.bq_load_table(df_output,
                                  updates_table,
@@ -231,5 +231,11 @@ if __name__ == '__main__':
             message = f"Processed {processed} hexes ({proc_pcnt:.1f}%) \t"
             message += f"Elapsed {elapsed:.0f} seconds ({rate:.0f} hexes/sec)"
             logger.info(message)
+            logger.debug(
+                "\n%s",
+                df_output.groupby(
+                    ['explorer_coverage', 'mappers_coverage'],
+                    dropna=False,
+                    as_index=False)['h3_index'].count().to_string(index=False))
         logger.info("completed %s, elapsed time %.2f secods", region,
                     time.perf_counter() - time_start)

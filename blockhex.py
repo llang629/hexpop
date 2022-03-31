@@ -34,7 +34,6 @@ def fetch_hotspots(cursor):
     try:
         new_cursor = payload['cursor']
     except KeyError:
-        logger.error("key error payload: %s", payload)  # TODO: remove
         new_cursor = ''
     return new_cursor, payload['data']
 

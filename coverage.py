@@ -14,13 +14,12 @@ import numpy
 import pandas
 import tenacity
 
+import blockhex
 import hexpop
 
-EXPLORER_ENABLED = True
 EXPLORER_BASE = "https://api.helium.io/v1/hotspots/hex/"
 # private "https://helium-api.stakejoy.com/v1/hotspots/hex/"
 
-MAPPERS_ENABLED = True
 MAPPER_BASE = "https://mappers.helium.com/api/v1/uplinks/hex/"
 # avoid "https://mappers.helium.com/api/v1/coverage/geo/"
 
@@ -70,6 +69,17 @@ def parse_args():
                         type=int,
                         default=1000,
                         help='number per batch of fetch coverage status')
+    parser.add_argument('-s',
+                        '--skip_mappers',
+                        action='store_true',
+                        default=False,
+                        help='skip Mappers if Explorer shows coverage')
+    parser.add_argument('-t',
+                        '--test',
+                        action='store_const',
+                        const='_test',
+                        default='',
+                        help='test table output only')
     parser.add_argument('-v',
                         '--verbose',
                         action='store_true',
@@ -81,30 +91,33 @@ def parse_args():
                         default=None,
                         help='refetch coverage status older than EXPIRE days')
     args = parser.parse_args()
-    return (args.regions, args.analyze, args.batch_size, args.verbose,
-            args.expire)
+    return (args.regions, args.analyze, args.batch_size, args.skip_mappers,
+            args.test, args.verbose, args.expire)
 
 
 logger_tenacity = logging.getLogger('tenacity')
 hexpop.initialize_logging(logger_tenacity)
 
 
-@tenacity.retry(wait=tenacity.wait_exponential(multiplier=1, min=1, max=300),
+@tenacity.retry(wait=tenacity.wait_exponential(multiplier=1, min=1, max=60),
                 before_sleep=tenacity.before_sleep_log(logger_tenacity,
                                                        logging.WARNING))
 async def fetch_coverage(h3_index, session):
     """Fetch H3 hex coverage based on Explorer hotspots or Mappers uplinks."""
-    explorer_url = EXPLORER_BASE + h3_index
-    explorer_coverage = False
-    if EXPLORER_ENABLED:
+    update_time = datetime.datetime.utcnow()
+    if EXPLORER_CACHE.set:
+        update_time = EXPLORER_CACHE.datetime
+        explorer_coverage = h3_index in EXPLORER_CACHE.set
+    else:
+        explorer_url = EXPLORER_BASE + h3_index
         async with session.get(explorer_url, headers={'user-agent':
                                                       'hexpop'}) as response:
             hotspots = (await response.json())['data']
             explorer_coverage = len(hotspots) > 0
-    logger.debug("exp %s (attempts %d)", h3_index,
-                 fetch_coverage.retry.statistics['attempt_number'])
-    mappers_coverage = False
-    if MAPPERS_ENABLED:
+    if explorer_coverage and skip_mappers:
+        mappers_coverage = None
+    else:
+        mappers_coverage = False
         mapper_urls = [
             MAPPER_BASE + h for h in h3.k_ring(h3.h3_to_center_child(h3_index))
         ]
@@ -115,13 +128,11 @@ async def fetch_coverage(h3_index, session):
                 uplinks = (await response.json())['uplinks']
                 mappers_coverage |= len(uplinks) > 0
                 if mappers_coverage:
+                    update_time = datetime.datetime.utcnow()
                     break
-    logger.debug("map %s (attempts %d)", h3_index,
-                 fetch_coverage.retry.statistics['attempt_number'])
-    return [
-        h3_index, explorer_coverage, mappers_coverage,
-        datetime.datetime.utcnow()
-    ]
+    logger.debug("hex %s, exp %s, map %s, time %s", h3_index,
+                 explorer_coverage, mappers_coverage, update_time)
+    return [h3_index, explorer_coverage, mappers_coverage, update_time]
 
 
 async def fetch_coverages(h3hexes):
@@ -134,7 +145,12 @@ async def fetch_coverages(h3hexes):
 if __name__ == '__main__':
     logger = logging.getLogger(pathlib.Path(__file__).stem)
     hexpop.initialize_logging(logger)
-    regions, analyze, batch_size, verbose, expire = parse_args()
+    (regions, analyze, batch_size, skip_mappers, test, verbose,
+     expire) = parse_args()
+    test = '_test'  # TODO: remove when safe
+    EXPLORER_CACHE = blockhex.load_hex_cache(expire * 24 * 60 * 60)
+    EXPLORER_CACHE.datetime = datetime.datetime.utcfromtimestamp(
+        EXPLORER_CACHE.timestamp)
     regional_dataset = hexpop.bq_prep_dataset('geopop')
     coverage_dataset = hexpop.bq_prep_dataset('coverage')
     updates_schema = hexpop.bq_form_schema([('h3_index', 'STRING'),
@@ -143,7 +159,7 @@ if __name__ == '__main__':
                                             ('mappers_coverage', 'BOOLEAN'),
                                             ('update_time', 'TIMESTAMP')])
     updates_table = hexpop.bq_create_table(coverage_dataset,
-                                           'updates',
+                                           'updates' + test,
                                            schema=updates_schema,
                                            partition='update_time',
                                            cluster=['region'],

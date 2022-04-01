@@ -97,7 +97,6 @@ if __name__ == '__main__':
         logger.info("%d hotspots covering %d hexes, %d seconds elapsed",
                     total_hotspots, len(hex_set),
                     time.perf_counter() - time_start)
-        break
     load_explorer_coverage(hex_set)
     logger.info("completed %d hotspots covering %d hexes, %d seconds elapsed",
                 total_hotspots, len(hex_set),

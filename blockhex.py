@@ -88,3 +88,7 @@ if __name__ == '__main__':
                     total_hotspots, len(hex_set),
                     time.perf_counter() - time_start)
     dump_hex_cache(sorted(list(hex_set)))
+    logger.info(
+        "completed %d hotspots covering %d hexes, %d seconds elapsed",
+        total_hotspots, len(hex_set),
+        time.perf_counter() - time_start)

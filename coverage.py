@@ -237,5 +237,5 @@ if __name__ == '__main__':
                     ['explorer_coverage', 'mappers_coverage'],
                     dropna=False,
                     as_index=False)['h3_index'].count().to_string(index=False))
-        logger.info("completed %s, elapsed time %.2f secods", region,
+        logger.info("completed %s, %d seconds elapsed", region,
                     time.perf_counter() - time_start)

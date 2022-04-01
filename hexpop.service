@@ -1,4 +1,4 @@
-# install or link from /etc/systemd/system
+# systemctl enable with full path to create links from /etc/systemd/system
 [Unit]
 Description=hexpop coverage service
 

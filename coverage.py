@@ -147,8 +147,8 @@ if __name__ == '__main__':
     hexpop.initialize_logging(logger)
     (regions, analyze, batch_size, skip_mappers, test, verbose,
      expire) = parse_args()
-    (EXPLORER_CACHE, EXPLORER_CACHE_TIMESTAMP) = coverexp.query_explorer_coverage(
-    )
+    (EXPLORER_CACHE,
+     EXPLORER_CACHE_TIMESTAMP) = coverexp.query_explorer_coverage()
     regional_dataset = hexpop.bq_prep_dataset('geopop')
     coverage_dataset = hexpop.bq_prep_dataset('coverage')
     updates_schema = hexpop.bq_form_schema([('h3_index', 'STRING'),

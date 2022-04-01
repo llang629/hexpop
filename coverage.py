@@ -106,7 +106,7 @@ async def fetch_coverage(h3_index, session):
     """Fetch H3 hex coverage based on Explorer hotspots or Mappers uplinks."""
     update_time = datetime.datetime.utcnow()
     if EXPLORER_CACHE:
-        update_time = EXPLORER_CACHE.datetime
+        update_time = EXPLORER_CACHE_TIMESTAMP
         explorer_coverage = h3_index in EXPLORER_CACHE
     else:
         explorer_url = EXPLORER_BASE + h3_index
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     hexpop.initialize_logging(logger)
     (regions, analyze, batch_size, skip_mappers, test, verbose,
      expire) = parse_args()
-    EXPLORER_CACHE, EXPLORER_CACHE_TIMESTAMP = coverexp.query_explorer_coverage(
+    (EXPLORER_CACHE, EXPLORER_CACHE_TIMESTAMP) = coverexp.query_explorer_coverage(
     )
     regional_dataset = hexpop.bq_prep_dataset('geopop')
     coverage_dataset = hexpop.bq_prep_dataset('coverage')

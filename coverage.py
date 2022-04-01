@@ -14,7 +14,7 @@ import numpy
 import pandas
 import tenacity
 
-import blockhex
+import coverexp
 import hexpop
 
 EXPLORER_BASE = "https://api.helium.io/v1/hotspots/hex/"
@@ -105,9 +105,9 @@ hexpop.initialize_logging(logger_tenacity)
 async def fetch_coverage(h3_index, session):
     """Fetch H3 hex coverage based on Explorer hotspots or Mappers uplinks."""
     update_time = datetime.datetime.utcnow()
-    if EXPLORER_CACHE.set:
+    if EXPLORER_CACHE:
         update_time = EXPLORER_CACHE.datetime
-        explorer_coverage = h3_index in EXPLORER_CACHE.set
+        explorer_coverage = h3_index in EXPLORER_CACHE
     else:
         explorer_url = EXPLORER_BASE + h3_index
         async with session.get(explorer_url, headers={'user-agent':
@@ -147,9 +147,8 @@ if __name__ == '__main__':
     hexpop.initialize_logging(logger)
     (regions, analyze, batch_size, skip_mappers, test, verbose,
      expire) = parse_args()
-    EXPLORER_CACHE = blockhex.load_hex_cache(expire * 24 * 60 * 60)
-    EXPLORER_CACHE.datetime = datetime.datetime.utcfromtimestamp(
-        EXPLORER_CACHE.timestamp)
+    EXPLORER_CACHE, EXPLORER_CACHE_TIMESTAMP = coverexp.query_explorer_coverage(
+    )
     regional_dataset = hexpop.bq_prep_dataset('geopop')
     coverage_dataset = hexpop.bq_prep_dataset('coverage')
     updates_schema = hexpop.bq_form_schema([('h3_index', 'STRING'),

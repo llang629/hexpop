@@ -49,23 +49,6 @@ regions() {
   bq query --nouse_legacy_sql "SELECT * FROM llang-helium.views.region_stats"
 }
 
-summarize() {
-  python3 summarize.py -d 0 1 # summarize population coverage for globe and by region
-  python3 summarize.py usa -d 2  # summarize population coverage by subregion
-  python3 summarize.py australia canada europe -d 2 -g  # subregions need boundary geometery for Data Studio
-}
-
-publish() {
-  bq ls publish | grep div
-  echo -n "Delete previously published summaries [yes|No] "
-  local PURGE
-  read PURGE
-  if [ "$PURGE" = "yes" ]; then
-    bq ls publish | grep div | awk '{$1=$1};1' | cut -d " " -f 1 | xargs -I {} bq rm -f publish.{}
-  fi
-  bq ls summaries | grep div | awk '{$1=$1};1' | cut -d " " -f 1 | xargs -I {} bq cp --snapshot --no_clobber summaries.{} publish.{}`date +-%Y-%m-%d`
-}
-
 case "$1" in
   setup)
     setup
@@ -81,12 +64,6 @@ case "$1" in
     ;;
   regions)
     regions
-    ;;
-  summarize)
-    echo $1 deprecated
-    ;;
-  publish)
-    echo $1 deprecated
     ;;
   *)
     echo "Usage: $0 {public|geopop|coverage|views|regions}"

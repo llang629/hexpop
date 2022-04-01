@@ -13,7 +13,6 @@ from google.cloud import bigquery
 from google.oauth2 import service_account
 
 LOG_DIR = '/var/log/hexpop'
-CACHE_DIR = '/var/cache/hexpop'
 
 
 def initialize_logging(logger, verbose=False):
@@ -121,6 +120,7 @@ def bq_create_table(dataset,
                     table_id,
                     schema=None,
                     partition=None,
+                    partition_hourly=False,
                     cluster=None,
                     description=None,
                     force_new=False):
@@ -133,6 +133,10 @@ def bq_create_table(dataset,
     if partition:
         table.time_partitioning = bigquery.TimePartitioning()
         table.time_partitioning.field = partition
+        if partition_hourly:
+            table.time_partitioning.type_ = bigquery.TimePartitioningType.HOUR
+        else:
+            table.time_partitioning.type_ = bigquery.TimePartitioningType.DAY
     if cluster:
         table.clustering_fields = cluster
     if description:
@@ -162,7 +166,7 @@ def bq_load_table(df, table_id, schema=None, write='WRITE_APPEND'):
     client = bq_client()
     job_config = bigquery.LoadJobConfig(
         schema=schema,
-        write_disposition=write  # default replace existing
+        write_disposition=write  # default append existing
     )
     job = client.load_table_from_dataframe(df, table_id, job_config=job_config)
     result = job.result()  # wait for job to complete
@@ -177,7 +181,10 @@ def bq_query_table(query, destination=None, write='WRITE_APPEND'):
         write_disposition=write  # default append existing
     )
     job = client.query(query=query, job_config=job_config)
-    result = job.result()  # wait for job to complete
+    try:
+        result = job.result()  # wait for job to complete
+    except NotFound:
+        return None
     return result
 
 

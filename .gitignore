@@ -1,9 +1,10 @@
 __pycache__
-*.gstmp
+.safe
 
 *.csv
 *.geojson
 *.gpkg
+*.gstmp
 *.json
 *.log
 *.txt

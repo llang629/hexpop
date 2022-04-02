@@ -10,7 +10,7 @@ import tenacity
 
 import hexpop
 
-HOTSPOTS_URL = "https://api.helium.io/v1/hotspots"
+EXPLORER_URL = "https://api.helium.io/v1/hotspots"
 
 logger_tenacity = logging.getLogger('tenacity')
 hexpop.initialize_logging(logger_tenacity)
@@ -22,9 +22,9 @@ hexpop.initialize_logging(logger_tenacity)
 def helium_api(cursor=''):
     """Helium API query, isolated for tenacity."""
     if cursor:
-        resp = requests.get(url=HOTSPOTS_URL + '?cursor=' + cursor)
+        resp = requests.get(url=EXPLORER_URL + '?cursor=' + cursor)
     else:
-        resp = requests.get(url=HOTSPOTS_URL)
+        resp = requests.get(url=EXPLORER_URL)
     resp.raise_for_status()
     return resp.json()
 
@@ -55,7 +55,40 @@ WHERE update_time >= PARSE_TIMESTAMP('%Y%m%d%H',(
 
 
 def load_explorer_coverage(hex_set):
-    """Load Explorer coverage hex set to BigQuery table."""
+    """Load Explorer coverage hex set to table."""
+    df = pandas.DataFrame({'h3_index': sorted(list(hex_set))})
+    df['explorer_coverage'] = True
+    df['update_time'] = datetime.datetime.utcnow()
+    hexpop.bq_load_table(df, explorer_table, write='WRITE_APPEND')
+
+
+def query_explorer_coverage(hexset=True):
+    """Query most recent Explorer coverage hex set from view."""
+    id = 'most_recent_explorer'
+    most_recent_explorer = hexpop.bq_create_view(
+        coverage_dataset,
+        id,
+        MOST_RECENT_EXPLORER_UPDATES.format(
+            project=coverage_dataset.project,
+            coverage_dataset=coverage_dataset.dataset_id),
+        force_new=True)
+    try:
+        df = hexpop.bq_query_table('SELECT * FROM {table}'.format(
+            table=hexpop.bq_full_id(most_recent_explorer))).to_dataframe()
+    except AttributeError:
+        return set(), datetime.datetime.fromtimestamp(0)
+    if not hexset:
+        return df
+    return set(df['h3_index'].loc[df['explorer_coverage']].to_list()), min(
+        df['update_time'])
+
+
+print(query_explorer_coverage(hexset=False))
+quit()
+
+if __name__ == '__main__':
+    logger = logging.getLogger(pathlib.Path(__file__).stem)
+    hexpop.initialize_logging(logger)
     explorer_schema = hexpop.bq_form_schema([('h3_index', 'STRING'),
                                              ('explorer_coverage', 'BOOLEAN'),
                                              ('update_time', 'TIMESTAMP')])
@@ -65,27 +98,6 @@ def load_explorer_coverage(hex_set):
                                             partition='update_time',
                                             partition_hourly=True,
                                             force_new=False)
-    df = pandas.DataFrame({'h3_index': sorted(list(hex_set))})
-    df['explorer_coverage'] = True
-    df['update_time'] = datetime.datetime.utcnow()
-    hexpop.bq_load_table(df, explorer_table, write='WRITE_APPEND')
-
-
-def query_explorer_coverage():
-    """Query most recent Explorer coverage hex set from BigQuery table."""
-    try:
-        df = hexpop.bq_query_table(
-            MOST_RECENT_EXPLORER_UPDATES.format(
-                project=coverage_dataset.project,
-                coverage_dataset=coverage_dataset.dataset_id)).to_dataframe()
-    except AttributeError:
-        return set(), datetime.datetime.fromtimestamp(0)
-    return set(df['h3_index'].to_list()), max(df['update_time'])
-
-
-if __name__ == '__main__':
-    logger = logging.getLogger(pathlib.Path(__file__).stem)
-    hexpop.initialize_logging(logger)
     time_start = time.perf_counter()
     total_hotspots = 0
     hex_set = set()

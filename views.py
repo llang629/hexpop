@@ -5,6 +5,16 @@ import pathlib
 import geopop
 import hexpop
 
+COVERED_HEXES = """
+SELECT h3_index FROM (
+    SELECT * FROM `{project}.{dataset}.most_recent_explorer`
+) WHERE explorer_coverage
+UNION DISTINCT
+SELECT h3_index FROM (
+    SELECT * FROM `{project}.{dataset}.most_recent_mappers`
+) WHERE mappers_coverage
+"""
+
 REGION_STATS = """
 SELECT
   IF(ARRAY_LENGTH(region) = 1, region[OFFSET(0)],'total') AS region,
@@ -168,12 +178,23 @@ if __name__ == '__main__':
     coverage_dataset = hexpop.bq_prep_dataset('coverage')
     views_dataset = hexpop.bq_prep_dataset('views')
 
+    id = 'covered_hexes'
+    logger.info(id)
+    region_stats = hexpop.bq_create_view(
+        views_dataset,
+        id,
+        COVERED_HEXES.format(project=coverage_dataset.project,
+                             dataset=coverage_dataset.dataset_id),
+        force_new=True)
+
     id = 'region_stats'
     logger.info(id)
     region_stats = hexpop.bq_create_view(
-        views_dataset, id,
+        views_dataset,
+        id,
         REGION_STATS.format(project=coverage_dataset.project,
-                            dataset=coverage_dataset.dataset_id))
+                            dataset=coverage_dataset.dataset_id),
+        force_new=True)
 
     for region in hexpop.clean_regions('all'):
         if region == 'gadm':

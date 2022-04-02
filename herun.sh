@@ -46,7 +46,10 @@ views() {
 
 regions() {
   # BigQuery view rolling up statistics for each region
-  bq query --nouse_legacy_sql "SELECT * FROM llang-helium.views.region_stats"
+  echo old
+  bq query --nouse_legacy_sql "SELECT * FROM `bq show | grep Project | cut -d ' ' -f 2`.views.region_stats"
+  echo new
+  bq query --nouse_legacy_sql "SELECT * FROM `bq show | grep Project | cut -d ' ' -f 2`.views.region_stats_new"
 }
 
 case "$1" in
@@ -63,7 +66,7 @@ case "$1" in
     views
     ;;
   regions)
-    regions
+    regions $2
     ;;
   *)
     echo "Usage: $0 {public|geopop|coverage|views|regions}"

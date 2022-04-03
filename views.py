@@ -218,7 +218,7 @@ if __name__ == '__main__':
     id = 'most_recent'
     logger.info(id)
     region_stats = hexpop.bq_create_view(
-        views_dataset,
+        coverage_dataset,
         id,
         MOST_RECENT.format(project=coverage_dataset.project,
                            coverage_dataset=coverage_dataset.dataset_id,

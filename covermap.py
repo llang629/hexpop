@@ -139,9 +139,6 @@ def query_mappers_coverage(hexset=True):
         df['update_time'])
 
 
-print(query_mappers_coverage(hexset=False))
-quit()
-
 if __name__ == '__main__':
     logger = logging.getLogger(pathlib.Path(__file__).stem)
     hexpop.initialize_logging(logger)

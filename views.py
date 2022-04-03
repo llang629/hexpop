@@ -2,16 +2,48 @@
 import logging
 import pathlib
 
+import coverexp
+import covermap
 import geopop
 import hexpop
 
+MOST_RECENT = """
+WITH most_recent AS (SELECT
+mappers.h3_index AS h3_index,
+IFNULL(explorer.explorer_coverage, FALSE) AS explorer_coverage,
+IFNULL(mappers.mappers_coverage, FALSE) AS mappers_coverage,
+LEAST(IFNULL(explorer.update_time, mappers.update_time),
+      IFNULL(mappers.update_time, explorer.update_time)) AS update_time
+FROM (SELECT *
+  FROM `{project}.{coverage_dataset}.most_recent_explorer`) AS explorer
+RIGHT JOIN (
+  SELECT * FROM `{project}.{coverage_dataset}.most_recent_mappers`) AS mappers
+  ON explorer.h3_index = mappers.h3_index)
+SELECT * FROM (
+  SELECT h3_index, 'australia' AS region, * EXCEPT (h3_index) FROM most_recent
+    WHERE h3_index IN
+    (SELECT h3_index FROM `{project}.{regional_dataset}.australia`)
+  UNION ALL
+  SELECT h3_index, 'canada' AS region, * EXCEPT (h3_index) FROM most_recent
+    WHERE h3_index IN
+    (SELECT h3_index FROM `{project}.{regional_dataset}.canada`)
+  UNION ALL
+  SELECT h3_index, 'europe' AS region, * EXCEPT (h3_index) FROM most_recent
+    WHERE h3_index IN
+    (SELECT h3_index FROM `{project}.{regional_dataset}.europe`)
+  UNION ALL
+  SELECT h3_index, 'usa' AS region, * EXCEPT (h3_index) FROM most_recent
+    WHERE h3_index IN
+    (SELECT h3_index FROM `{project}.{regional_dataset}.usa`))
+"""
+
 COVERED_HEXES = """
 SELECT h3_index FROM (
-    SELECT * FROM `{project}.{dataset}.most_recent_explorer`
+    SELECT * FROM `{project}.{coverage_dataset}.most_recent_explorer`
 ) WHERE explorer_coverage
 UNION DISTINCT
 SELECT h3_index FROM (
-    SELECT * FROM `{project}.{dataset}.most_recent_mappers`
+    SELECT * FROM `{project}.{coverage_dataset}.most_recent_mappers`
 ) WHERE mappers_coverage
 """
 
@@ -30,7 +62,7 @@ FROM (
     SUM(CASE WHEN explorer_coverage OR mappers_coverage
       THEN pop.population ELSE 0 END) AS pop_cover
   FROM (
-    SELECT * FROM `{project}.{dataset}.most_recent`) AS cover
+    SELECT * FROM `{project}.{coverage_dataset}.most_recent`) AS cover
     LEFT JOIN `{project}.public.kontur_population_20211109` AS pop
     ON cover.h3_index = pop.h3_index
   GROUP BY
@@ -41,8 +73,8 @@ ORDER BY
 
 GEOPOP_COVERAGE_BY_REGION = """
 SELECT geopop.*, coverage.explorer_coverage, coverage.mappers_coverage
-  FROM `{project}.geopop.{region}` AS geopop
-INNER JOIN (SELECT * FROM `{project}.coverage.most_recent`
+  FROM `{project}.{regional_dataset}.{region}` AS geopop
+INNER JOIN (SELECT * FROM `{project}.{coverage_dataset}.most_recent`
   WHERE region='{region}') AS coverage
 ON geopop.h3_index = coverage.h3_index
 ORDER BY {bis_code}, h3_index
@@ -61,13 +93,13 @@ FROM (
     ROUND(100*IFNULL(pop_cover.covered, 0)/pop_total.total, 1) AS percent
   FROM (
     SELECT {sem_code}, SUM(population) AS covered
-    FROM `{project}.{dataset}.geopop_coverage_{region}`
+    FROM `{project}.{views_dataset}.geopop_coverage_{region}`
     WHERE explorer_coverage = TRUE OR mappers_coverage = TRUE
     GROUP BY {sem_code}) AS pop_cover
   RIGHT JOIN (
     SELECT
       {sem_code}, SUM(population) AS total
-    FROM `{project}.{dataset}.geopop_coverage_{region}`
+    FROM `{project}.{views_dataset}.geopop_coverage_{region}`
     GROUP BY {sem_code}) AS pop_total
   ON
     pop_cover.{sem_code} = pop_total.{sem_code}) AS summary_sem
@@ -93,13 +125,13 @@ FROM (
     ROUND(100*IFNULL(pop_cover.covered, 0)/pop_total.total, 1) AS percent
   FROM (
     SELECT {bis_code}, SUM(population) AS covered
-    FROM `{project}.{dataset}.geopop_coverage_{region}`
+    FROM `{project}.{views_dataset}.geopop_coverage_{region}`
     WHERE explorer_coverage = TRUE OR mappers_coverage = TRUE
     GROUP BY {bis_code}) AS pop_cover
   RIGHT JOIN (
     SELECT {bis_code}, SUM(population) AS total,
       STRING_AGG({sem_code}) AS sem_list
-    FROM `{project}.{dataset}.geopop_coverage_{region}`
+    FROM `{project}.{views_dataset}.geopop_coverage_{region}`
     GROUP BY {bis_code}) AS pop_total
   ON
     pop_cover.{bis_code} = pop_total.{bis_code} ) AS summary_bis
@@ -112,10 +144,10 @@ ORDER BY percent DESC
 
 SUMMARY_COMBO_USA_CANADA = """
 SELECT state as spt_id, state_name AS spt_name, percent
-  FROM `{project}.{dataset}.div1_usa_by_state_name`
+  FROM `{project}.{views_dataset}.div1_usa_by_state_name`
 UNION ALL
 SELECT PRUID as spt_id, province AS spt_name, percent
-  FROM `{project}.{dataset}.div1_canada_by_province`
+  FROM `{project}.{views_dataset}.div1_canada_by_province`
 ORDER BY percent DESC
 """
 
@@ -123,37 +155,37 @@ ORDER BY percent DESC
 SUMMARY_BY_COUNTRY = """
 (SELECT
   country, covered, total, percent
- FROM `{project}.{dataset}.div1_europe_by_country`)
+ FROM `{project}.{views_dataset}.div1_europe_by_country`)
 UNION ALL (
   SELECT
     'USA' AS country, covered, total,
     ROUND(100*IFNULL(covered, 0)/total, 1) AS percent
   FROM (
     SELECT SUM(population) AS covered
-    FROM `{project}.{dataset}.geopop_coverage_usa`
+    FROM `{project}.{views_dataset}.geopop_coverage_usa`
     WHERE explorer_coverage = TRUE OR mappers_coverage = TRUE),
     (SELECT SUM(population) AS total
-     FROM `{project}.{dataset}.geopop_coverage_usa`))
+     FROM `{project}.{views_dataset}.geopop_coverage_usa`))
 UNION ALL (
   SELECT
     'Canada' AS country, covered, total,
     ROUND(100*IFNULL(covered, 0)/total, 1) AS percent
   FROM (
     SELECT SUM(population) AS covered
-    FROM `{project}.{dataset}.geopop_coverage_canada`
+    FROM `{project}.{views_dataset}.geopop_coverage_canada`
     WHERE explorer_coverage = TRUE OR mappers_coverage = TRUE),
     (SELECT SUM(population) AS total
-     FROM `{project}.{dataset}.geopop_coverage_canada`))
+     FROM `{project}.{views_dataset}.geopop_coverage_canada`))
 UNION ALL (
   SELECT
     'Australia' AS country, covered, total,
     ROUND(100*IFNULL(covered, 0)/total, 1) AS percent
   FROM (
     SELECT SUM(population) AS covered
-    FROM `{project}.{dataset}.geopop_coverage_australia`
+    FROM `{project}.{views_dataset}.geopop_coverage_australia`
     WHERE explorer_coverage = TRUE OR mappers_coverage = TRUE),
     (SELECT SUM(population) AS total
-     FROM `{project}.{dataset}.geopop_coverage_australia`))
+     FROM `{project}.{views_dataset}.geopop_coverage_australia`))
 ORDER BY
   percent DESC
 """
@@ -178,13 +210,28 @@ if __name__ == '__main__':
     coverage_dataset = hexpop.bq_prep_dataset('coverage')
     views_dataset = hexpop.bq_prep_dataset('views')
 
+    logger.info("most_recent_explorer")
+    coverexp.query_explorer_coverage()
+    logger.info("most_recent_mappers")
+    covermap.query_mappers_coverage()
+
+    id = 'most_recent'
+    logger.info(id)
+    region_stats = hexpop.bq_create_view(
+        views_dataset,
+        id,
+        MOST_RECENT.format(project=coverage_dataset.project,
+                           coverage_dataset=coverage_dataset.dataset_id,
+                           regional_dataset=geopop_dataset.dataset_id),
+        force_new=True)
+
     id = 'covered_hexes'
     logger.info(id)
     region_stats = hexpop.bq_create_view(
         views_dataset,
         id,
         COVERED_HEXES.format(project=coverage_dataset.project,
-                             dataset=coverage_dataset.dataset_id),
+                             coverage_dataset=coverage_dataset.dataset_id),
         force_new=True)
 
     id = 'region_stats'
@@ -193,7 +240,7 @@ if __name__ == '__main__':
         views_dataset,
         id,
         REGION_STATS.format(project=coverage_dataset.project,
-                            dataset=coverage_dataset.dataset_id),
+                            coverage_dataset=coverage_dataset.dataset_id),
         force_new=True)
 
     for region in hexpop.clean_regions('all'):
@@ -204,7 +251,9 @@ if __name__ == '__main__':
             [geopop_dataset.dataset_id, coverage_dataset.dataset_id, region])
         logger.info(id)
         query = GEOPOP_COVERAGE_BY_REGION.format(
-            project=geopop_dataset.project,
+            project=coverage_dataset.project,
+            coverage_dataset=coverage_dataset.dataset_id,
+            regional_dataset=geopop_dataset.dataset_id,
             region=region,
             bis_code=params.bis_code)
         hexpop.bq_create_view(views_dataset, id, query, force_new=True)
@@ -216,7 +265,7 @@ if __name__ == '__main__':
              params.sem_admin.replace(' ', '_')], geo_suffix)
         logger.info(id)
         query = SUMMARY_BY_SEM.format(project=geopop_dataset.project,
-                                      dataset=views_dataset.dataset_id,
+                                      views_dataset=views_dataset.dataset_id,
                                       region=region,
                                       sem_admin=params.sem_admin,
                                       sem_code=params.sem_code,
@@ -235,7 +284,7 @@ if __name__ == '__main__':
              params.bis_admin.replace(' ', '_')], geo_suffix)
         logger.info(id)
         query = SUMMARY_BY_BIS.format(project=geopop_dataset.project,
-                                      dataset=views_dataset.dataset_id,
+                                      views_dataset=views_dataset.dataset_id,
                                       region=region,
                                       sem_admin=params.sem_admin,
                                       sem_code=params.sem_code,
@@ -253,14 +302,14 @@ if __name__ == '__main__':
 
     id = 'div1_usa_canada_by_state_province'
     logger.info(id)
-    query = SUMMARY_COMBO_USA_CANADA.format(project=views_dataset.project,
-                                            dataset=views_dataset.dataset_id)
+    query = SUMMARY_COMBO_USA_CANADA.format(
+        project=views_dataset.project, views_dataset=views_dataset.dataset_id)
     hexpop.bq_create_view(views_dataset, id, query, force_new=True)
 
     id = 'div0_global_by_country'
     logger.info(id)
     query = SUMMARY_BY_COUNTRY.format(
         project=geopop_dataset.project,
-        dataset=views_dataset.dataset_id,
+        views_dataset=views_dataset.dataset_id,
     )
     hexpop.bq_create_view(views_dataset, id, query, force_new=True)

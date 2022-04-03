@@ -162,10 +162,10 @@ if __name__ == '__main__':
                                            partition='update_time',
                                            cluster=['region'],
                                            force_new=False)
-    most_recent = hexpop.bq_create_view(
-        coverage_dataset, 'most_recent',
-        MOST_RECENT.format(project=coverage_dataset.project,
-                           dataset=coverage_dataset.dataset_id))
+    # most_recent = hexpop.bq_create_view(
+    #     coverage_dataset, 'most_recent',
+    #     MOST_RECENT.format(project=coverage_dataset.project,
+    #                        dataset=coverage_dataset.dataset_id))
 
     for region in hexpop.clean_regions(regions):
         if region == 'gadm':

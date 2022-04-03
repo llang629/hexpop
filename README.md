@@ -32,8 +32,8 @@ Both formats are made publicly readable, as listed below.
 
 |Type|Scope|Source|Google Cloud Storage|BigQuery|
 |---|---|---|---|---|
-|Coverage|Global|[Explorer](https://explorer.helium.com/)|&nbsp;&nbsp;N/A|`llang-helium.coverage.explorer_updates` [all time]<br />`llang-helium.coverage.most_recent_explorer` [most recent]|
-|Coverage|Regions|[Mappers](https://mappers.helium.com/)|&nbsp;&nbsp;N/A|`llang-helium.coverage.mappers_updates` [all time]<br />`llang-helium.coverage.most_recent_mappers` [most recent]|
+|Coverage|Global|[Explorer](https://explorer.helium.com/)|&nbsp;&nbsp;N/A|`llang-helium.coverage.explorer_updates`&nbsp;[all&nbsp;time]<br />`llang-helium.coverage.most_recent_explorer`&nbsp;[most&nbsp;recent]|
+|Coverage|Regions|[Mappers](https://mappers.helium.com/)|&nbsp;&nbsp;N/A|`llang-helium.coverage.mappers_updates`&nbsp;[all&nbsp;time]<br />`llang-helium.coverage.most_recent_mappers`&nbsp;[most&nbsp;recent]|
 |Population|Global|[Kontur](https://data.humdata.org/dataset/kontur-population-dataset)|[`kontur_population_20211109.gpkg`](https://storage.googleapis.com/hexpop/kontur_population_20211109.gpkg)|`llang-helium.public.kontur_population_20211109`|
 |Boundary|Australia|[Australian Bureau of Statistics](https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files)|[`aus_STE_2021_AUST_SHP_GDA2020.zip`](https://storage.googleapis.com/hexpop/aus_STE_2021_AUST_SHP_GDA2020.zip)<br />[`aus_LGA_2021_AUST_GDA2020_SHP.zip`](https://storage.googleapis.com/hexpop/aus_LGA_2021_AUST_GDA2020_SHP.zip)|`llang-helium.public.aus_STE_2021_AUST_SHP_GDA2020`<br />`llang-helium.public.aus_LGA_2021_AUST_GDA2020_SHP`|
 |Boundary|Canada|[Statistics Canada](https://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/bound-limit-2016-eng.cfm)|[`can_province_territory.zip`](https://storage.googleapis.com/hexpop/can_province_territory.zip)<br />[`can_census_division.zip`](https://storage.googleapis.com/hexpop/can_census_division.zip)|`llang-helium.public.can_province_territory`<br />`llang-helium.public.can_census_division`|

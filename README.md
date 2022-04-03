@@ -30,9 +30,10 @@ Original raw data from public sources has been cached in Google Cloud Storage, t
 
 Both formats are made publicly readable, as listed below.
 
-|Type|Region|Source|Google Cloud Storage|BigQuery|
+|Type|Scope|Source|Google Cloud Storage|BigQuery|
 |---|---|---|---|---|
-|Coverage|Global|[Explorer](https://explorer.helium.com/)<br />[Mappers](https://mappers.helium.com/)|&nbsp;&nbsp;N/A|`llang-helium.coverage.updates` [all time]<br />`llang-helium.coverage.most_recent` [most recent]|
+|Coverage|Global|[Explorer](https://explorer.helium.com/)|&nbsp;&nbsp;N/A|`llang-helium.coverage.explorer_updates` [all time]<br />`llang-helium.coverage.most_recent_explorer` [most recent]|
+|Coverage|Regions|[Mappers](https://mappers.helium.com/)|&nbsp;&nbsp;N/A|`llang-helium.coverage.mappers_updates` [all time]<br />`llang-helium.coverage.most_recent_mappers` [most recent]|
 |Population|Global|[Kontur](https://data.humdata.org/dataset/kontur-population-dataset)|[`kontur_population_20211109.gpkg`](https://storage.googleapis.com/hexpop/kontur_population_20211109.gpkg)|`llang-helium.public.kontur_population_20211109`|
 |Boundary|Australia|[Australian Bureau of Statistics](https://www.abs.gov.au/statistics/standards/australian-statistical-geography-standard-asgs-edition-3/jul2021-jun2026/access-and-downloads/digital-boundary-files)|[`aus_STE_2021_AUST_SHP_GDA2020.zip`](https://storage.googleapis.com/hexpop/aus_STE_2021_AUST_SHP_GDA2020.zip)<br />[`aus_LGA_2021_AUST_GDA2020_SHP.zip`](https://storage.googleapis.com/hexpop/aus_LGA_2021_AUST_GDA2020_SHP.zip)|`llang-helium.public.aus_STE_2021_AUST_SHP_GDA2020`<br />`llang-helium.public.aus_LGA_2021_AUST_GDA2020_SHP`|
 |Boundary|Canada|[Statistics Canada](https://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/bound-limit-2016-eng.cfm)|[`can_province_territory.zip`](https://storage.googleapis.com/hexpop/can_province_territory.zip)<br />[`can_census_division.zip`](https://storage.googleapis.com/hexpop/can_census_division.zip)|`llang-helium.public.can_province_territory`<br />`llang-helium.public.can_census_division`|
@@ -43,6 +44,8 @@ Python scripts and BigQuery commands that can be run locally or on a Google Comp
 
 Assumes environment has been set up for [Google Cloud CLI access](https://cloud.google.com/sdk/docs/install), including BigQuery.
 
+Separate coverage modules for Explorer and Mappers, so each can be updated at a pace appropraite for its respective API.
+
 Modules listed below in expected order of use.
 
 |Module|Description|
@@ -52,16 +55,17 @@ Modules listed below in expected order of use.
 |`public.py`|Load public data sources from Google Cloud Storage cache into BigQuery tables, with geospatial column using latitude/longitude reference system. Multiprocessing to accelerate processing of large datasets.|
 |`public.ini`|Configuration for each public data source.
 |`statoids.py`|Scrape [Statoids website](http://www.statoids.com/yus.html) for data about U.S. counties.|
-|`geopop.py`|Assemble list of hexes with population for each region.
+|`geopop.py`|Assemble list of hexes for each region, with population associated with each.
 |`geopop.ini`|Configuration for each region. Also accessed by `views.py`.|
-|`coverage.py`|Survey Explorer and Mappers APIs to determine whether a hex has coverage (see definition above). Multithreading to parallelize API requests, but regions with many hexes still require hours or days to completely update.|
+|`coverexp.py`|Download via the Explorer API to list all hotspots from the Helium blockchain, then determine which hex each covers. Cursor to serialize API requests. Currently requires less than an hour to update completely.|
+|`covermap.py`|Survey via the Mappers API to determine whether a hex has coverage (see definition above). Multithreading to parallelize API requests. Regions with many hexes require hours or days to update completely.|
 |`views.py`|Join coverage and population data to create dynamic views suitable for [Data Studio geospatial visualization](https://support.google.com/datastudio/answer/7065037).|
-|`summarize.py`|deprecated|
 |`google-service-account.json`|Account-specific credentials to [authorize BigQuery access](https://cloud.google.com/bigquery/docs/authentication/service-account-file#python). Not recorded in Git repository.|
 |`herun.sh`|Shell script for frequently run commands.|
 |`hevm.sh`|Shell script for managing Google Compute Engine VM instances.
 |`home.py`|Example of [H3 API](https://h3geo.org/docs/api/indexing) for hex identified by environment variable HOME_HEX.|
 |`usa48.py`|Example of plotting or filtering by the 48 contiguous U.S. states.|
+
 ## Future Plans
 - Repeat coverage surveys to track growth of the Helium network.
 - Extend to new geographies, particularly in Asia.

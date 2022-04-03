@@ -47,9 +47,6 @@ views() {
 
 regions() {
   # BigQuery view rolling up statistics for each region
-  echo old
-  bq query --nouse_legacy_sql "SELECT * FROM `bq show | grep Project | cut -d ' ' -f 2`.views.region_stats_old"
-  echo new
   bq query --nouse_legacy_sql "SELECT * FROM `bq show | grep Project | cut -d ' ' -f 2`.views.region_stats"
 }
 

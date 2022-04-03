@@ -35,9 +35,10 @@ geopop() {
 
 coverage() {
   echo GCP instance type e2-medium recommended for frugal io-bound processes
+  python 3 coverexp.py
   expire=$1
   expire="${expire:=7}" # default expiration seven days
-  python3 coverage.py -x $expire # fetch coverage status for each hex by region
+  python3 covermap.py -x $expire # fetch coverage status for each hex by region
 }
 
 views() {

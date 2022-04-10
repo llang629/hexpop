@@ -215,30 +215,30 @@ if __name__ == '__main__':
     logger.info("most_recent_mappers")
     covermap.query_mappers_coverage()
 
-    id = 'most_recent'
-    logger.info(id)
+    view_id = 'most_recent'
+    logger.info(view_id)
     region_stats = hexpop.bq_create_view(
         coverage_dataset,
-        id,
+        view_id,
         MOST_RECENT.format(project=coverage_dataset.project,
                            coverage_dataset=coverage_dataset.dataset_id,
                            regional_dataset=geopop_dataset.dataset_id),
         force_new=True)
 
-    id = 'covered_hexes'
-    logger.info(id)
+    view_id = 'covered_hexes'
+    logger.info(view_id)
     region_stats = hexpop.bq_create_view(
         views_dataset,
-        id,
+        view_id,
         COVERED_HEXES.format(project=coverage_dataset.project,
                              coverage_dataset=coverage_dataset.dataset_id),
         force_new=True)
 
-    id = 'region_stats'
-    logger.info(id)
+    view_id = 'region_stats'
+    logger.info(view_id)
     region_stats = hexpop.bq_create_view(
         views_dataset,
-        id,
+        view_id,
         REGION_STATS.format(project=coverage_dataset.project,
                             coverage_dataset=coverage_dataset.dataset_id),
         force_new=True)
@@ -247,23 +247,23 @@ if __name__ == '__main__':
         if region == 'gadm':
             continue
         params = geopop.parse_ini(region)
-        id = _create_id(
+        view_id = _create_id(
             [geopop_dataset.dataset_id, coverage_dataset.dataset_id, region])
-        logger.info(id)
+        logger.info(view_id)
         query = GEOPOP_COVERAGE_BY_REGION.format(
             project=coverage_dataset.project,
             coverage_dataset=coverage_dataset.dataset_id,
             regional_dataset=geopop_dataset.dataset_id,
             region=region,
             bis_code=params.bis_code)
-        hexpop.bq_create_view(views_dataset, id, query, force_new=True)
+        hexpop.bq_create_view(views_dataset, view_id, query, force_new=True)
 
         geoignore_start, geoignore_stop, geo_suffix = _geom_add(
             params.sem_geom_include)
-        id = _create_id(
+        view_id = _create_id(
             ['div1', region, 'by',
              params.sem_admin.replace(' ', '_')], geo_suffix)
-        logger.info(id)
+        logger.info(view_id)
         query = SUMMARY_BY_SEM.format(project=geopop_dataset.project,
                                       views_dataset=views_dataset.dataset_id,
                                       region=region,
@@ -275,14 +275,14 @@ if __name__ == '__main__':
                                       geoignore_stop=geoignore_stop,
                                       sem_source=params.sem_source.format(
                                           project=geopop_dataset.project))
-        hexpop.bq_create_view(views_dataset, id, query, force_new=True)
+        hexpop.bq_create_view(views_dataset, view_id, query, force_new=True)
 
         geoignore_start, geoignore_stop, geo_suffix = _geom_add(
             params.bis_geom_include)
-        id = _create_id(
+        view_id = _create_id(
             ['div2', region, 'by',
              params.bis_admin.replace(' ', '_')], geo_suffix)
-        logger.info(id)
+        logger.info(view_id)
         query = SUMMARY_BY_BIS.format(project=geopop_dataset.project,
                                       views_dataset=views_dataset.dataset_id,
                                       region=region,
@@ -298,18 +298,18 @@ if __name__ == '__main__':
                                       geoignore_stop=geoignore_stop,
                                       bis_source=params.bis_source.format(
                                           project=geopop_dataset.project))
-        hexpop.bq_create_view(views_dataset, id, query, force_new=True)
+        hexpop.bq_create_view(views_dataset, view_id, query, force_new=True)
 
-    id = 'div1_usa_canada_by_state_province'
-    logger.info(id)
+    view_id = 'div1_usa_canada_by_state_province'
+    logger.info(view_id)
     query = SUMMARY_COMBO_USA_CANADA.format(
         project=views_dataset.project, views_dataset=views_dataset.dataset_id)
-    hexpop.bq_create_view(views_dataset, id, query, force_new=True)
+    hexpop.bq_create_view(views_dataset, view_id, query, force_new=True)
 
-    id = 'div0_global_by_country'
-    logger.info(id)
+    view_id = 'div0_global_by_country'
+    logger.info(view_id)
     query = SUMMARY_BY_COUNTRY.format(
         project=geopop_dataset.project,
         views_dataset=views_dataset.dataset_id,
     )
-    hexpop.bq_create_view(views_dataset, id, query, force_new=True)
+    hexpop.bq_create_view(views_dataset, view_id, query, force_new=True)

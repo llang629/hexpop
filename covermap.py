@@ -68,16 +68,24 @@ async def fetch_uplinks(h3_index, session):
     ]
     for mapper_url in mapper_urls:
         async with session.get(mapper_url) as response:
-            uplinks = (await response.json())['uplinks']
-            mappers_coverage |= len(uplinks) > 0
-            if mappers_coverage:
-                break
+            if response.status == 200:
+                uplinks = (await response.json())['uplinks']
+                mappers_coverage |= len(uplinks) > 0
+            elif response.status == 500:
+                logger_tenacity.warning(
+                    "response status 500 for %s, assuming no coverage",
+                    mapper_url)
+                mappers_coverage |= False
+            else:
+                response.raise_for_status()
+        if mappers_coverage:
+            break
     return [h3_index, mappers_coverage, datetime.datetime.utcnow()]
 
 
 async def fetch_mappers(h3hexes):
     """Queue coroutines to fetch coverage, gather results."""
-    async with aiohttp.ClientSession(raise_for_status=True) as session:
+    async with aiohttp.ClientSession() as session:
         return await asyncio.gather(
             *map(fetch_uplinks, h3hexes, itertools.repeat(session)))
 
@@ -120,10 +128,10 @@ def load_mappers_coverage(df=None):
 
 def query_mappers_coverage(hexset=True):
     """Query most recent Mappers coverage hex set from view."""
-    id = 'most_recent_mappers'
+    view_id = 'most_recent_mappers'
     most_recent_mappers = hexpop.bq_create_view(
         coverage_dataset,
-        id,
+        view_id,
         MOST_RECENT_MAPPERS_UPDATES.format(
             project=coverage_dataset.project,
             coverage_dataset=coverage_dataset.dataset_id),

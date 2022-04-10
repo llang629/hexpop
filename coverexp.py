@@ -64,10 +64,10 @@ def load_explorer_coverage(hex_set):
 
 def query_explorer_coverage(hexset=True):
     """Query most recent Explorer coverage hex set from view."""
-    id = 'most_recent_explorer'
+    view_id = 'most_recent_explorer'
     most_recent_explorer = hexpop.bq_create_view(
         coverage_dataset,
-        id,
+        view_id,
         MOST_RECENT_EXPLORER_UPDATES.format(
             project=coverage_dataset.project,
             coverage_dataset=coverage_dataset.dataset_id),

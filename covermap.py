@@ -1,4 +1,4 @@
-"""Fetch H3 hex coverage status based on Explorer hotspots, Mappers uplinks."""
+"""Fetch H3 hex coverage status based on Mappers uplinks."""
 import asyncio
 import datetime
 import itertools
@@ -61,7 +61,7 @@ hexpop.initialize_logging(logger_tenacity)
                 before_sleep=tenacity.before_sleep_log(logger_tenacity,
                                                        logging.WARNING))
 async def fetch_uplinks(h3_index, session):
-    """Fetch H3 hex coverage based on Explorer hotspots or Mappers uplinks."""
+    """Fetch H3 hex coverage based on Mappers uplinks."""
     mappers_coverage = False
     mapper_urls = [
         MAPPERS_URL + h for h in h3.k_ring(h3.h3_to_center_child(h3_index))

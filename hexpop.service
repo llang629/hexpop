@@ -5,7 +5,7 @@ Description=hexpop coverage service
 [Service]
 Type=idle
 # create symbolic link to actual location
-ExecStart=/usr/bin/python3 /usr/local/bin/covermap.py -x 3
+ExecStart=/usr/bin/python3 /usr/local/bin/covermap.py -b 30 -r 2 -x 3
 # expiration should be long enough to complete survey of all regions
 Restart=always
 RestartSec=900

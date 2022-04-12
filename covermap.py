@@ -13,6 +13,7 @@ import h3
 import numpy
 import pandas
 import tenacity
+import token_bucket
 
 import hexpop
 
@@ -37,7 +38,12 @@ def parse_args():
                         '--batch_size',
                         type=int,
                         default=1000,
-                        help='number per batch of fetch coverage status')
+                        help='number per batch of fetches')
+    parser.add_argument('-r',
+                        '--rate_limit',
+                        type=int,
+                        default=0,
+                        help='rate per second of API queries')
     parser.add_argument('-v',
                         '--verbose',
                         action='store_true',
@@ -49,8 +55,8 @@ def parse_args():
                         default=None,
                         help='refetch coverage status older than EXPIRE days')
     args = parser.parse_args()
-    return (args.regions, args.analyze, args.batch_size, args.verbose,
-            args.expire)
+    return (args.regions, args.analyze, args.batch_size, args.rate_limit,
+            args.verbose, args.expire)
 
 
 logger_tenacity = logging.getLogger('tenacity')
@@ -67,6 +73,8 @@ async def fetch_uplinks(h3_index, session):
         MAPPERS_URL + h for h in h3.k_ring(h3.h3_to_center_child(h3_index))
     ]
     for mapper_url in mapper_urls:
+        while rate_limit and not limiter.consume("mappers", 1):
+            time.sleep(0.01)
         async with session.get(mapper_url) as response:
             if response.status == 200:
                 uplinks = (await response.json())['uplinks']
@@ -150,7 +158,10 @@ def query_mappers_coverage(hexset=True):
 if __name__ == '__main__':
     logger = logging.getLogger(pathlib.Path(__file__).stem)
     hexpop.initialize_logging(logger)
-    regions, analyze, batch_size, verbose, expire = parse_args()
+    regions, analyze, batch_size, rate_limit, verbose, expire = parse_args()
+    if rate_limit:
+        limiter = token_bucket.Limiter(rate_limit, 60,
+                                       token_bucket.MemoryStorage())
     mappers_schema = hexpop.bq_form_schema([('h3_index', 'STRING'),
                                             ('mappers_coverage', 'BOOLEAN'),
                                             ('update_time', 'TIMESTAMP')])
@@ -184,6 +195,7 @@ if __name__ == '__main__':
             df_refresh = df_refresh[(df_refresh['update_time'] <=
                                      expiration_date)]
             retain -= df_refresh.shape[0]
+        df_refresh.sort_values(by=['update_time'], inplace=True)
         try:
             early = df_refresh['update_time'].iloc[0].strftime('%Y-%m-%dT%X')
             late = df_refresh['update_time'].iloc[-1].strftime('%Y-%m-%dT%X')
